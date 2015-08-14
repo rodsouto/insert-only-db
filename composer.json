@@ -1,0 +1,23 @@
+{
+    "name": "rodsouto/insert-only-db",
+    "description": "A package to work with insert-only tables",
+    "require": {
+        "doctrine/dbal": "^2.5",
+        "ramsey/uuid": "^2.8"
+    },
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Rodrigo",
+            "email": "rodrigo_7@live.com.ar"
+        }
+    ],
+    "require-dev": {
+        "phpunit/phpunit": "^4.8"
+    },
+    "autoload": {
+        "psr-4": {
+            "InsertOnlyDb\\": "src/"
+        }
+    }
+}
