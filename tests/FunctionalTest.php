@@ -107,4 +107,47 @@ class Functional extends \PHPUnit_Framework_TestCase {
         $this->connection->insert($this->tableName, ['uuid' => 'fail']);
     }
 
+    public function testFetchAllReturnsLastVersionOrderedByUuidAsc() {
+        $uuid1 = $this->connection->insert($this->tableName, ['field1' => 1, 'field2' => 5]);
+        $uuid2 = $this->connection->insert($this->tableName, ['field1' => 2, 'field2' => 6]);
+        $uuid3 = $this->connection->insert($this->tableName, ['field1' => 3, 'field2' => 7]);
+        $uuid4 = $this->connection->insert($this->tableName, ['field1' => 4, 'field2' => 8]);
+
+        $this->connection->update($this->tableName, $uuid1, ['field2' => 9]);
+        $this->connection->update($this->tableName, $uuid2, ['field2' => 10]);
+        $this->connection->update($this->tableName, $uuid3, ['field2' => 11]);
+        $this->connection->update($this->tableName, $uuid4, ['field2' => 12]);
+
+        $results = $this->connection->fetchAll($this->tableName);
+
+        $uuids = [$uuid1, $uuid2, $uuid3, $uuid4];
+
+        sort($uuids);
+
+        foreach($uuids as $index => $uuid) {
+            $this->assertEquals($uuid, $results[$index]['uuid']);
+
+            $this->assertArrayNotHasKey('id', $results[$index]);
+
+            switch($uuid) {
+                case $uuid1:
+                    $this->assertEquals(9, $results[$index]['field2']);
+                break;
+                case $uuid2:
+                    $this->assertEquals(10, $results[$index]['field2']);
+                break;
+                case $uuid3:
+                    $this->assertEquals(11, $results[$index]['field2']);
+                break;
+                case $uuid4:
+                    $this->assertEquals(12, $results[$index]['field2']);
+                break;
+                default:
+                    throw new \RuntimeException('Woops');
+                break;
+            }
+
+        }
+    }
+
 }

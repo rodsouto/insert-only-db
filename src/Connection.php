@@ -83,14 +83,32 @@ class Connection {
         return $result;
     }
 
+    public function fetchAll($tableName) {
+
+        $query = $this->connection
+            ->createQueryBuilder()
+            ->select($this->getColumns($tableName, false))
+            ->from($tableName)
+            ->groupBy('uuid')
+            ->orderBy('uuid', 'ASC');
+
+        $result = $this->connection->fetchAll($query->getSQL());
+
+        return $result;
+    }
+
     /**
      * @param string $tableName
      * @return string
      */
-    private function getColumns($tableName) {
+    private function getColumns($tableName, $getId = true) {
         $sm = $this->connection->getSchemaManager();
 
         $columns = $sm->listTableColumns($tableName);
+
+        if (!$getId) {
+            unset($columns['id']);
+        }
 
         return implode(', ', array_keys($columns));
     }
