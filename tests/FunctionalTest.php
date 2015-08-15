@@ -74,6 +74,16 @@ class Functional extends \PHPUnit_Framework_TestCase {
         $this->assertEquals(array_merge($insert, $update)+['uuid' => $uuid], $result);
     }
 
+    public function testUpdateWithoutUuidThrowsException() {
+        $this->setExpectedException('InvalidArgumentException');
+        $this->connection->update($this->tableName, null, ['field1' => 2]);
+    }
+
+    public function testUpdateInexistentUuid() {
+        $result = $this->connection->update($this->tableName, 'invalid_uuid', ['field' => 2]);
+        $this->assertFalse($result);
+    }
+
     public function testMultipleUpdates() {
         $insert = ['field1' => 'value1', 'field2' => 'value2'];
         $uuid = $this->connection->insert($this->tableName, $insert);
@@ -97,7 +107,7 @@ class Functional extends \PHPUnit_Framework_TestCase {
         $this->assertArrayNotHasKey('id', $result);
     }
 
-    public function testNoResultsReturnsFalse() {
+    public function testFetchNoResultsReturnsFalse() {
         $this->assertFalse($this->connection->fetch($this->tableName, 'fail'));
     }
 

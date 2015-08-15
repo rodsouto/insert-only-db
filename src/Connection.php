@@ -49,10 +49,19 @@ class Connection {
      * @param $tableName
      * @param $uuid
      * @param array $values
-     * @return string
+     * @return string|false
      */
     public function update($tableName, $uuid, array $values) {
+
+        if (empty($uuid)) {
+            throw new \InvalidArgumentException('UUID can\'t be empty');
+        }
+
         $data = $this->fetch($tableName, $uuid);
+
+        if ($data === false) {
+            return false;
+        }
 
         unset($data['id']);
 
@@ -103,9 +112,7 @@ class Connection {
             )
             ->orderBy('uuid', 'ASC');
 
-        $result = $this->connection->fetchAll($query->getSQL());
-
-        return $result;
+        return $this->connection->fetchAll($query->getSQL());
     }
 
     /**
