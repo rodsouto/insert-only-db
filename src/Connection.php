@@ -89,7 +89,18 @@ class Connection {
             ->createQueryBuilder()
             ->select($this->getColumns($tableName, false))
             ->from($tableName)
-            ->groupBy('uuid')
+            ->where(
+                $this->connection
+                    ->createQueryBuilder()->expr()->in(
+                    'id',
+                    $this->connection
+                        ->createQueryBuilder()
+                        ->select('MAX(id)')
+                        ->from($tableName)
+                        ->groupBy('uuid')
+                        ->getSQL()
+                )
+            )
             ->orderBy('uuid', 'ASC');
 
         $result = $this->connection->fetchAll($query->getSQL());
