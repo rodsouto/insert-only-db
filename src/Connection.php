@@ -46,8 +46,8 @@ class Connection {
     }
 
     /**
-     * @param $tableName
-     * @param $uuid
+     * @param string $tableName
+     * @param string $uuid
      * @param array $values
      * @return string|false
      */
@@ -71,7 +71,24 @@ class Connection {
     /**
      * @param string $tableName
      * @param string $uuid
-     * @return array
+     * @return int|false
+     */
+    public function delete($tableName, $uuid) {
+        $data = $this->fetch($tableName, $uuid);
+
+        if (empty($data)) {
+            return false;
+        }
+
+        $data['deleted'] = 1;
+
+        return $this->connection->insert($tableName, $data);
+    }
+
+    /**
+     * @param string $tableName
+     * @param string $uuid
+     * @return array|false
      */
     public function fetch($tableName, $uuid) {
         $query = $this->connection
@@ -89,9 +106,17 @@ class Connection {
             unset($result['id']);
         }
 
+        if ($result['deleted'] == 1) {
+            return false;
+        }
+
         return $result;
     }
 
+    /**
+     * @param string $tableName
+     * @return array
+     */
     public function fetchAll($tableName) {
 
         $query = $this->connection
@@ -110,6 +135,7 @@ class Connection {
                         ->getSQL()
                 )
             )
+            ->andWhere('deleted = 0')
             ->orderBy('uuid', 'ASC');
 
         return $this->connection->fetchAll($query->getSQL());

@@ -41,6 +41,8 @@ class Functional extends \PHPUnit_Framework_TestCase {
         $myTable->addColumn('id', 'integer', array('unsigned' => true, 'autoincrement' => true));
         $myTable->addColumn('uuid', 'binary', array('length' => 128));
 
+        $myTable->addColumn('deleted', 'boolean', array('default' => false));
+
         $myTable->addColumn('field1', 'string', array('length' => 32));
         $myTable->addColumn('field2', 'string', array('length' => 32));
 
@@ -56,6 +58,7 @@ class Functional extends \PHPUnit_Framework_TestCase {
         $uuid = $this->connection->insert($this->tableName, $insert);
 
         $insert['uuid'] = $uuid;
+        $insert['deleted'] = 0;
 
         $result = $this->connection->fetch($this->tableName, $uuid);
 
@@ -71,7 +74,7 @@ class Functional extends \PHPUnit_Framework_TestCase {
 
         $result = $this->connection->fetch($this->tableName, $uuid);
 
-        $this->assertEquals(array_merge($insert, $update)+['uuid' => $uuid], $result);
+        $this->assertEquals(array_merge($insert, $update)+['uuid' => $uuid, 'deleted' => 0], $result);
     }
 
     public function testUpdateWithoutUuidThrowsException() {
@@ -158,6 +161,30 @@ class Functional extends \PHPUnit_Framework_TestCase {
             }
 
         }
+    }
+
+    public function testDeleteAndFetch() {
+        $uuid = $this->connection->insert($this->tableName, ['field1' => 2, 'field2' => 3]);
+
+        $this->assertNotEmpty($this->connection->fetch($this->tableName, $uuid));
+
+        $this->connection->delete($this->tableName, $uuid);
+
+        $this->assertFalse($this->connection->fetch($this->tableName, $uuid));
+    }
+
+    public function testDeleteAndFetchAll() {
+        $uuid1 = $this->connection->insert($this->tableName, ['field1' => 2, 'field2' => 3]);
+        $uuid2 = $this->connection->insert($this->tableName, ['field1' => 4, 'field2' => 5]);
+
+        $this->assertTrue(sizeof($this->connection->fetchAll($this->tableName)) == 2);
+
+        $this->connection->delete($this->tableName, $uuid1);
+
+        $result = $this->connection->fetchAll($this->tableName);
+
+        $this->assertTrue(sizeof($result) == 1);
+        $this->assertEquals($uuid2, $result[0]['uuid']);
     }
 
 }
