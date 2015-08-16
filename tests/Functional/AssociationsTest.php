@@ -15,18 +15,21 @@ class AssociationsTest extends FunctionalTestCase {
         $teams = $schema->createTable('teams');
         $teams->addColumn('id', 'integer', array('unsigned' => true, 'autoincrement' => true));
         $teams->addColumn('uuid', 'binary', array('length' => 128));
+        $teams->addColumn('created_at', 'datetimetz');
         $teams->addColumn('deleted', 'boolean', array('default' => false));
         $teams->setPrimaryKey(array('id'));
 
         $players = $schema->createTable('players');
         $players->addColumn('id', 'integer', array('unsigned' => true, 'autoincrement' => true));
         $players->addColumn('uuid', 'binary', array('length' => 128));
+        $players->addColumn('created_at', 'datetimetz');
         $players->addColumn('deleted', 'boolean', array('default' => false));
         $players->setPrimaryKey(array('id'));
 
         $teamsPlayers = $schema->createTable('teams_players');
         $teamsPlayers->addColumn('id', 'integer', array('unsigned' => true, 'autoincrement' => true));
         $teamsPlayers->addColumn('uuid', 'binary', array('length' => 128));
+        $teamsPlayers->addColumn('created_at', 'datetimetz');
         $teamsPlayers->addColumn('deleted', 'boolean', array('default' => false));
         $teamsPlayers->addColumn('team_uuid', 'integer', array('unsigned' => true));
         $teamsPlayers->addColumn('player_uuid', 'integer', array('unsigned' => true));

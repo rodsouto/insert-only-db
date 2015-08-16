@@ -39,6 +39,7 @@ class Connection {
         }
 
         $values['uuid'] = Uuid::uuid4()->toString();
+        $values['created_at'] = (new \DateTime)->format('Y-m-d H:i:s');
 
         $this->connection->insert($tableName, $values);
 
@@ -64,6 +65,8 @@ class Connection {
         }
 
         unset($data['id']);
+
+        $data['created_at'] = (new \DateTime)->format('Y-m-d H:i:s');
 
         return $this->connection->insert($tableName, array_merge($data, $values));
     }

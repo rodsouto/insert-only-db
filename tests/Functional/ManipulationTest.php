@@ -14,17 +14,18 @@ class ManipulationTest extends FunctionalTestCase {
     private function createSchema(\Doctrine\DBAL\Connection $connection) {
         $schema = new \Doctrine\DBAL\Schema\Schema();
 
-        $myTable = $schema->createTable($this->tableName);
+        $table = $schema->createTable($this->tableName);
 
-        $myTable->addColumn('id', 'integer', array('unsigned' => true, 'autoincrement' => true));
-        $myTable->addColumn('uuid', 'binary', array('length' => 128));
+        $table->addColumn('id', 'integer', array('unsigned' => true, 'autoincrement' => true));
+        $table->addColumn('uuid', 'binary', array('length' => 128));
+        $table->addColumn('created_at', 'datetimetz');
 
-        $myTable->addColumn('deleted', 'boolean', array('default' => false));
+        $table->addColumn('deleted', 'boolean', array('default' => false));
 
-        $myTable->addColumn('field1', 'string', array('length' => 32));
-        $myTable->addColumn('field2', 'string', array('length' => 32));
+        $table->addColumn('field1', 'string', array('length' => 32));
+        $table->addColumn('field2', 'string', array('length' => 32));
 
-        $myTable->setPrimaryKey(array('id'));
+        $table->setPrimaryKey(array('id'));
 
         foreach($schema->toSql($connection->getDatabasePlatform()) as $query) {
             $connection->executeQuery($query);
@@ -40,6 +41,10 @@ class ManipulationTest extends FunctionalTestCase {
 
         $result = $this->connection->fetchByUuid($this->tableName, $uuid);
 
+        $this->assertTrue(!empty($result['created_at']));
+
+        unset($result['created_at']);
+
         $this->assertEquals($insert, $result);
     }
 
@@ -47,10 +52,19 @@ class ManipulationTest extends FunctionalTestCase {
         $insert = ['field1' => 'value1', 'field2' => 'value2'];
         $uuid = $this->connection->insert($this->tableName, $insert);
 
+        $insertResult = $this->connection->fetchByUuid($this->tableName, $uuid);
+
+        sleep(2);
+
         $update = ['field2' => 'value3'];
         $this->connection->update($this->tableName, $uuid, $update);
 
         $result = $this->connection->fetchByUuid($this->tableName, $uuid);
+
+        $this->assertNotEquals($insertResult['created_at'], $result['created_at']);
+        $this->assertTrue(!empty($result['created_at']));
+
+        unset($result['created_at']);
 
         $this->assertEquals(array_merge($insert, $update)+['uuid' => $uuid, 'deleted' => 0], $result);
     }

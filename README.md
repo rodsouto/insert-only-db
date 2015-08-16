@@ -12,4 +12,5 @@ The following fields must exist in every table:
 
 * `id` (autoincrement)
 * `uuid` (will be auto generated)
+* `created_at`
 * `deleted`
