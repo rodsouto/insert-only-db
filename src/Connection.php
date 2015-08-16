@@ -87,20 +87,27 @@ class Connection {
 
     /**
      * @param string $tableName
-     * @param string $uuid
+     * @param string|array $uuidOrValues
      * @return array|false
      */
-    public function fetch($tableName, $uuid) {
+    public function fetch($tableName, $uuidOrValues) {
         $query = $this->connection
                         ->createQueryBuilder()
                         ->select($this->getColumns($tableName))
                         ->from($tableName)
-                        ->where('uuid = :uuid')
                         ->orderBy('id', 'DESC')
                         ->setFirstResult(0)
                         ->setMaxResults(1);
 
-        $result = $this->connection->fetchAssoc($query->getSQL(), ['uuid' => $uuid]);
+        if (is_string($uuidOrValues)) {
+            $uuidOrValues = ['uuid' => $uuidOrValues];
+        }
+
+        foreach($uuidOrValues as $field => $value) {
+            $query->andWhere($field.' = ?');
+        }
+
+        $result = $this->connection->fetchAssoc($query->getSQL(), array_values($uuidOrValues));
 
         if (is_array($result)) {
             unset($result['id']);
@@ -121,31 +128,79 @@ class Connection {
 
         $query = $this->connection
             ->createQueryBuilder()
-            ->select($this->getColumns($tableName, false))
-            ->from($tableName)
+            ->select($this->getColumns($tableName, 't', false))
+            ->from($tableName, 't')
             ->where(
-                $this->connection
-                    ->createQueryBuilder()->expr()->in(
-                    'id',
-                    $this->connection
-                        ->createQueryBuilder()
-                        ->select('MAX(id)')
-                        ->from($tableName)
-                        ->groupBy('uuid')
-                        ->getSQL()
-                )
+                $this->getWhereMaxIdInSql('t.id', $tableName, 'uuid')
             )
-            ->andWhere('deleted = 0')
-            ->orderBy('uuid', 'ASC');
+            ->andWhere('t.deleted = 0')
+            ->orderBy('t.uuid', 'ASC');
 
         return $this->connection->fetchAll($query->getSQL());
+    }
+
+    public function fetchAssociation($owningTable, $inverseTable, array $config) {
+
+        if (empty($config['type'])) {
+            throw new \InvalidArgumentException('Asociation type can\'t be empty');
+        }
+
+        if ($config['type'] != 'manyToMany') {
+            throw new \InvalidArgumentException('Only ManyToMany associations are supported');
+        }
+
+        $inverseJoinColumns = $config['inverseJoinColumns'];
+        $joinColumns = $config['joinColumns'];
+
+        $query = $this->connection
+            ->createQueryBuilder()
+            ->select($this->getColumns($inverseTable, 'i'))
+            ->from($inverseTable, 'i')
+            ->innerJoin(
+                'i',
+                $config['joinTable'],
+                'j',
+                sprintf('i.%s = j.%s', $inverseJoinColumns['referencedColumnName'], $inverseJoinColumns['name'])
+            )
+            ->innerJoin(
+                'j',
+                $owningTable,
+                'o',
+                sprintf('j.%s = o.%s', $joinColumns['name'], $joinColumns['referencedColumnName'])
+            )
+            ->andWhere(
+                $this->getWhereMaxIdInSql('i.id', $inverseTable, 'uuid')
+            )
+            ->andWhere(
+                $this->getWhereMaxIdInSql('j.id', $config['joinTable'], $inverseJoinColumns['name'])
+            )
+            ->andWhere('j.deleted = 0')
+            ->andWhere('i.deleted = 0')
+            ->orderBy('i.uuid', 'ASC');
+
+        return $this->connection->fetchAll($query->getSQL());
+    }
+
+    private function getWhereMaxIdInSql($fieldIn, $tableName, $groupBy) {
+        return $this->connection
+            ->createQueryBuilder()
+            ->expr()
+            ->in(
+                $fieldIn,
+                $this->connection
+                    ->createQueryBuilder()
+                    ->select('MAX(id)')
+                    ->from($tableName)
+                    ->groupBy($groupBy)
+                    ->getSQL()
+            );
     }
 
     /**
      * @param string $tableName
      * @return string
      */
-    private function getColumns($tableName, $getId = true) {
+    private function getColumns($tableName, $tableAlias = '', $getId = true) {
         $sm = $this->connection->getSchemaManager();
 
         $columns = $sm->listTableColumns($tableName);
@@ -154,7 +209,13 @@ class Connection {
             unset($columns['id']);
         }
 
-        return implode(', ', array_keys($columns));
+        $columns = array_keys($columns);
+
+        if ($tableAlias) {
+            $columns = array_map(function($tableName) use ($tableAlias) {return $tableAlias.'.'.$tableName;}, $columns);
+        }
+
+        return implode(', ', $columns);
     }
 
 }

@@ -8,4 +8,8 @@ It's just a proof of concept
 
 ## Required fields
 
-Each table must have a field called `id` (autoincrement) and another field called `uuid`, wich will be auto generated.
+The following fields must exist in every table:
+
+* `id` (autoincrement)
+* `uuid` (will be auto generated)
+* `deleted`

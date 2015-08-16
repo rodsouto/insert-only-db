@@ -1,36 +1,14 @@
 <?php
 
-namespace InsertOnlyDb\Tests;
+namespace InsertOnlyDb\Tests\Functional;
 
-use InsertOnlyDb\Connection;
-
-class Functional extends \PHPUnit_Framework_TestCase {
-
-    /** @var Connection */
-    private $connection;
+class ManipulationTest extends FunctionalTestCase {
 
     private $tableName = 'test_table';
 
     public function setUp() {
-        $doctrineConnection = $this->getDoctrineConnection();
-        $this->connection = new Connection($doctrineConnection);
-        $this->createSchema($doctrineConnection);
-    }
-
-    public function tearDown() {
-        $this->connection->getDoctrineConnection()->close();
-    }
-
-    private function getDoctrineConnection() {
-        $config = new \Doctrine\DBAL\Configuration();
-
-        $connectionParams = array(
-            'memory' => true,
-            'driver' => 'pdo_sqlite',
-        );
-        $conn = \Doctrine\DBAL\DriverManager::getConnection($connectionParams, $config);
-
-        return $conn;
+        parent::setUp();
+        $this->createSchema($this->connection->getDoctrineConnection());
     }
 
     private function createSchema(\Doctrine\DBAL\Connection $connection) {
