@@ -81,7 +81,7 @@ class AssociationsTest extends FunctionalTestCase {
 
         $originalUuid = $uuidsInfo['players'];
 
-        $this->connection->delete('players', $originalUuid[0]);
+        $this->connection->deleteByUuid('players', $originalUuid[0]);
         $this->connection->delete('teams_players', ['team_uuid' => $uuidsInfo['team'], 'player_uuid' => $originalUuid[1]]);
         unset($originalUuid[0], $originalUuid[1]);
 

@@ -38,7 +38,7 @@ class ManipulationTest extends FunctionalTestCase {
         $insert['uuid'] = $uuid;
         $insert['deleted'] = 0;
 
-        $result = $this->connection->fetch($this->tableName, $uuid);
+        $result = $this->connection->fetchByUuid($this->tableName, $uuid);
 
         $this->assertEquals($insert, $result);
     }
@@ -50,7 +50,7 @@ class ManipulationTest extends FunctionalTestCase {
         $update = ['field2' => 'value3'];
         $this->connection->update($this->tableName, $uuid, $update);
 
-        $result = $this->connection->fetch($this->tableName, $uuid);
+        $result = $this->connection->fetchByUuid($this->tableName, $uuid);
 
         $this->assertEquals(array_merge($insert, $update)+['uuid' => $uuid, 'deleted' => 0], $result);
     }
@@ -72,7 +72,7 @@ class ManipulationTest extends FunctionalTestCase {
         foreach([2, 3, 4] as $value) {
             $this->connection->update($this->tableName, $uuid, ['field2' => $value]);
 
-            $result = $this->connection->fetch($this->tableName, $uuid);
+            $result = $this->connection->fetchByUuid($this->tableName, $uuid);
 
             $this->assertEquals($value, $result['field2']);
         }
@@ -83,13 +83,13 @@ class ManipulationTest extends FunctionalTestCase {
         $insert = ['field1' => 'value1', 'field2' => 'value2'];
         $uuid = $this->connection->insert($this->tableName, $insert);
 
-        $result = $this->connection->fetch($this->tableName, $uuid);
+        $result = $this->connection->fetchByUuid($this->tableName, $uuid);
 
         $this->assertArrayNotHasKey('id', $result);
     }
 
     public function testFetchNoResultsReturnsFalse() {
-        $this->assertFalse($this->connection->fetch($this->tableName, 'fail'));
+        $this->assertFalse($this->connection->fetchByUuid($this->tableName, 'fail'));
     }
 
     public function testUuidOnInsertThrowsException() {
@@ -144,11 +144,11 @@ class ManipulationTest extends FunctionalTestCase {
     public function testDeleteAndFetch() {
         $uuid = $this->connection->insert($this->tableName, ['field1' => 2, 'field2' => 3]);
 
-        $this->assertNotEmpty($this->connection->fetch($this->tableName, $uuid));
+        $this->assertNotEmpty($this->connection->fetchByUuid($this->tableName, $uuid));
 
-        $this->connection->delete($this->tableName, $uuid);
+        $this->connection->deleteByUuid($this->tableName, $uuid);
 
-        $this->assertFalse($this->connection->fetch($this->tableName, $uuid));
+        $this->assertFalse($this->connection->fetchByUuid($this->tableName, $uuid));
     }
 
     public function testDeleteAndFetchAll() {
@@ -157,7 +157,7 @@ class ManipulationTest extends FunctionalTestCase {
 
         $this->assertTrue(sizeof($this->connection->fetchAll($this->tableName)) == 2);
 
-        $this->connection->delete($this->tableName, $uuid1);
+        $this->connection->deleteByUuid($this->tableName, $uuid1);
 
         $result = $this->connection->fetchAll($this->tableName);
 

@@ -57,7 +57,7 @@ class Connection {
             throw new \InvalidArgumentException('UUID can\'t be empty');
         }
 
-        $data = $this->fetch($tableName, $uuid);
+        $data = $this->fetchByUuid($tableName, $uuid);
 
         if ($data === false) {
             return false;
@@ -70,11 +70,11 @@ class Connection {
 
     /**
      * @param string $tableName
-     * @param string $uuid
+     * @param array $where
      * @return int|false
      */
-    public function delete($tableName, $uuid) {
-        $data = $this->fetch($tableName, $uuid);
+    public function delete($tableName, array $where) {
+        $data = $this->fetch($tableName, $where);
 
         if (empty($data)) {
             return false;
@@ -87,10 +87,19 @@ class Connection {
 
     /**
      * @param string $tableName
-     * @param string|array $uuidOrValues
+     * @param string $uuid
+     * @return int|false
+     */
+    public function deleteByUuid($tableName, $uuid) {
+        return $this->delete($tableName, ['uuid' => $uuid]);
+    }
+
+    /**
+     * @param string $tableName
+     * @param array $where
      * @return array|false
      */
-    public function fetch($tableName, $uuidOrValues) {
+    public function fetch($tableName, array $where) {
         $query = $this->connection
                         ->createQueryBuilder()
                         ->select($this->getColumns($tableName))
@@ -99,15 +108,11 @@ class Connection {
                         ->setFirstResult(0)
                         ->setMaxResults(1);
 
-        if (is_string($uuidOrValues)) {
-            $uuidOrValues = ['uuid' => $uuidOrValues];
-        }
-
-        foreach($uuidOrValues as $field => $value) {
+        foreach($where as $field => $value) {
             $query->andWhere($field.' = ?');
         }
 
-        $result = $this->connection->fetchAssoc($query->getSQL(), array_values($uuidOrValues));
+        $result = $this->connection->fetchAssoc($query->getSQL(), array_values($where));
 
         if (is_array($result)) {
             unset($result['id']);
@@ -118,6 +123,15 @@ class Connection {
         }
 
         return $result;
+    }
+
+    /**
+     * @param string $tableName
+     * @param string $uuid
+     * @return array|false
+     */
+    public function fetchByUuid($tableName, $uuid) {
+        return $this->fetch($tableName, ['uuid' => $uuid]);
     }
 
     /**
